@@ -12,39 +12,58 @@ function CreateGradleProject {
         exit 1
     }
 
+
+
     Write-Output Creating Gradle project in $PWD/$PROJECT_NAME...
     mkdir -p "$PROJECT_NAME/src/test/resources"
     mkdir -p "$PROJECT_NAME/src/test/java"
     mkdir -p "$PROJECT_NAME/src/main/resources"
     mkdir -p "$PROJECT_NAME/src/main/java"
 
-    Write-Output "apply plugin: 'java'
+    $BuildGradle = "
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.7.2'
-    testCompile group: 'org.easytesting', name: 'fest-assert', version: '1.4'
-    testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
-" | Out-File -FilePath "$PROJECT_NAME/build.gradle" -encoding utf8
 
-    Write-Output ".idea
+test {
+    useJUnitPlatform()
+}
+"
+    $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+    New-Item -Name "$PROJECT_NAME/build.gradle" -ItemType File
+    [System.IO.File]::WriteAllLines("$PWD/$PROJECT_NAME/build.gradle", $BuildGradle, $Utf8NoBomEncoding)
+
+    $GitIgnore = ".idea
 .gradle
 *.iml
 *.ipr
 *.iws
 out
-build" | Out-File -FilePath "$PROJECT_NAME/.gitignore" -encoding utf8
+build"
+    New-Item -Name "$PROJECT_NAME/.gitignore" -ItemType File
+    [System.IO.File]::WriteAllLines("$PWD/$PROJECT_NAME/.gitignore", $GitIgnore, $Utf8NoBomEncoding)
 
-    Write-Output "rootProject.name = `"$PROJECT_NAME`"" | Out-File -FilePath "$PROJECT_NAME/gradle.settings" -encoding utf8
+    $SettingsGradle = "rootProject.name = `"$PROJECT_NAME`""
+
+    New-Item -Name "$PROJECT_NAME/settings.gradle" -ItemType File
+    [System.IO.File]::WriteAllLines("$PWD/$PROJECT_NAME/settings.gradle", $SettingsGradle, $Utf8NoBomEncoding)
 
     Set-Location $PROJECT_NAME
     git init
-    git add -- build.gradle .gitignore
+    git add -- build.gradle .gitignore settings.gradle
     git commit -m "Added build script and .gitignore"
 
     Write-Output "All done. You can now import the project into your IDE."
