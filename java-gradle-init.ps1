@@ -1,3 +1,6 @@
+# Add this function to your powershell profile (code $PROFILE)
+# and call it with CreateGradleProject [project name]
+
 function CreateGradleProject {
     param (
         $PROJECT_NAME
